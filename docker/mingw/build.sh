@@ -29,12 +29,11 @@ build_proj() {
     host=$arch-w64-mingw32
     prefix=${DIST}/$arch
     dep=${PREFIX}/$arch
+    cpu="$(nproc --all)"
 
     cd "$SRC"
-    git clone ${PROJ_URL} proj
     cd proj
-    git checkout ${PROJ_REV}
-    git submodule update --init
+
     ./autogen.sh
     ./configure --host=${host} --prefix=${prefix} \
       --disable-documentation \
@@ -45,8 +44,8 @@ build_proj() {
       --with-cares="$dep" \
       CFLAGS="-DCARES_STATICLIB -DPCRE_STATIC"
     make clean
-    make LDFLAGS="-all-static -L${dep}/lib"
-    make install-strip
+    make -j$cpu LDFLAGS="-all-static -L${dep}/lib"
+    make install
 }
 
 dk_build() {
@@ -65,16 +64,6 @@ dk_package() {
         cp ${DIST}/i686/bin/ss-${bin}.exe ss-${bin}-x86.exe
         cp ${DIST}/x86_64/bin/ss-${bin}.exe ss-${bin}-x64.exe
     done
-    pushd "$SRC/proj"
-    GIT_REV="$(git rev-parse --short HEAD)"
-    popd
-    echo "SHA1 checksum for build $(date +"%y%m%d")-${GIT_REV}" > checksum
-    for f in *.exe; do
-        echo "  $f:" >> checksum
-        echo "    $(sha1sum $f | cut -d ' ' -f 1)" >> checksum
-    done
-    sed -e 's/$/\r/' checksum > checksum.txt
-    rm -f checksum
     cd ..
     tar zcf /bin.tgz ss-libev-${PROJ_REV}
 }

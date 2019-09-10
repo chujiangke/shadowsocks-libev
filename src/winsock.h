@@ -1,7 +1,7 @@
 /*
  * winsock.h - Windows socket compatibility layer
  *
- * Copyright (C) 2013 - 2018, Max Lv <max.c.lv@gmail.com>
+ * Copyright (C) 2013 - 2019, Max Lv <max.c.lv@gmail.com>
  *
  * This file is part of the shadowsocks-libev.
  *
@@ -89,20 +89,25 @@
 #define close(fd) closesocket(fd)
 
 // Override MinGW functions
-#define setsockopt(a,b,c,d,e) setsockopt(a,b,c,(const char *)(d),e)
-#define inet_ntop(a,b,c,d) inet_ntop(a,(void *)(b),c,d)
+#define setsockopt(a, b, c, d, e) setsockopt(a, b, c, (const char *)(d), e)
+#define inet_ntop(a, b, c, d) inet_ntop(a, (void *)(b), c, d)
 
 // Override Windows built-in functions
 #ifdef ERROR
 #undef ERROR
 #endif
 #define ERROR(s) ss_error(s)
-#ifndef _UTILS_H
-void ss_error(const char *s);
-#endif
 
-// Missing unistd.h functions
+#ifdef gai_strerror
+#undef gai_strerror
+#endif
+#define gai_strerror(e) ss_gai_strerror(e)
+char *ss_gai_strerror(int ecode);
+
+// Missing Unix functions
 #define sleep(x) Sleep((x) * 1000)
+#define bzero(s, n) memset(s, 0, n)
+#define strndup(s, n) ss_strndup(s, n)
 
 // Winsock compatibility functions
 int setnonblocking(SOCKET socket);
